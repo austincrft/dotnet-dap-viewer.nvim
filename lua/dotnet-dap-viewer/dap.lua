@@ -198,7 +198,8 @@ function M.resolve_by_var_name(stack_frame_id, var_name, cb)
     if err or not response or not response.variablesReference then
       cache[var_name] = nil
       callback_queue[var_name] = nil
-      error("No variable reference found for: " .. var_name)
+      vim.notify("Could not resolve expression: " .. var_name, vim.log.levels.WARN)
+      return
     end
 
     if response.variablesReference == 0 then

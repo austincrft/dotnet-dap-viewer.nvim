@@ -4,7 +4,7 @@ local M = {}
 local Window = {}
 Window.__index = Window
 
-local function get_default_win_opts()
+local function get_default_win_opts(title)
   local config = require("dotnet-dap-viewer.config")
   local win_config = config.config.window
 
@@ -52,6 +52,8 @@ local function get_default_win_opts()
     row = math.floor((vim.o.lines - height) / 2),
     style = "minimal",
     border = "rounded",
+    title = title and (" " .. title .. " ") or nil,
+    title_pos = title and "center" or nil,
   }
 end
 
@@ -82,10 +84,10 @@ local function sort_members(members)
   return members
 end
 
-function Window.new_float()
+function Window.new_float(title)
   local self = setmetatable({}, Window)
   self.buf = vim.api.nvim_create_buf(false, true)
-  self.opts = get_default_win_opts()
+  self.opts = get_default_win_opts(title)
   self.buf_opts = {
     modifiable = false,
     filetype = nil,
@@ -278,9 +280,10 @@ function M.toggle_under_cursor(window)
 end
 
 --- Show debugger variable UI
----@param varlist table[] List of DAP-style variables
+---@param varlist table|string List of DAP-style variables
 ---@param frame_id number Frame ID to use for async resolution
-function M.show(varlist, frame_id)
+---@param title string|nil Variable path to display as window title
+function M.show(varlist, frame_id, title)
   if M._current_window then
     M.close()
   end
@@ -302,7 +305,7 @@ function M.show(varlist, frame_id)
 
   state.root_vars = sort_members(root_vars)
 
-  local float = Window.new_float():pos_center():create()
+  local float = Window.new_float(title):pos_center():create()
   M._current_window = float
   M.redraw()
 

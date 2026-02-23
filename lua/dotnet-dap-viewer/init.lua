@@ -87,7 +87,7 @@ function M.open_variable_viewer(var_name)
 
   -- Resolve and show the variable
   M.resolve_variable(frame.id, var_name, function(resolved)
-    ui.show(resolved.value, frame.id)
+    ui.show(resolved.value, frame.id, var_name)
   end)
 end
 
@@ -159,7 +159,8 @@ local function register_with_dap()
   dap.listeners.after.event_stopped["dotnet-dap-viewer"] = function(session)
     -- Only activate for netcoredbg or coreclr adapters
     local adapter = session.config.type
-    if not (adapter == "coreclr" or adapter == "netcoredbg" or (session.adapter and session.adapter.command and session.adapter.command:find("netcoredbg"))) then
+    local cmd = session.adapter and session.adapter["command"]
+    if not (adapter == "coreclr" or adapter == "netcoredbg" or (cmd and cmd:find("netcoredbg"))) then
       return
     end
 
