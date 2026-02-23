@@ -8,6 +8,42 @@ local ui = require("dotnet-dap-viewer.ui")
 local original_keymaps = {}
 local is_registered = false
 
+--- Extract the full dotted expression up to and including the word under the cursor.
+--- For `license.Features.Count`, cursor on `Features` returns `license.Features`.
+---@return string
+local function get_dotted_expression()
+  local line = vim.api.nvim_get_current_line()
+  local _, col = unpack(vim.api.nvim_win_get_cursor(0)) -- 0-indexed byte column
+  col = col + 1 -- convert to 1-indexed
+
+  -- Scan left from cursor: collect identifiers and dots
+  local left = col
+  while left > 1 do
+    local ch = line:sub(left - 1, left - 1)
+    if ch:match("[%w_.]") then
+      left = left - 1
+    else
+      break
+    end
+  end
+
+  -- Scan right from cursor: collect only identifier chars (stop at dot)
+  local right = col
+  while right < #line do
+    local ch = line:sub(right + 1, right + 1)
+    if ch:match("[%w_]") then
+      right = right + 1
+    else
+      break
+    end
+  end
+
+  local expr = line:sub(left, right)
+  -- Trim any leading/trailing dots
+  expr = expr:gsub("^%.+", ""):gsub("%.+$", "")
+  return expr
+end
+
 --- Resolve a variable by name
 ---@param stack_frame_id integer
 ---@param var_name string
@@ -46,7 +82,7 @@ function M.open_variable_viewer(var_name)
 
   -- Use word under cursor if no var_name provided
   if not var_name then
-    var_name = vim.fn.expand("<cword>")
+    var_name = get_dotted_expression()
   end
 
   -- Resolve and show the variable
